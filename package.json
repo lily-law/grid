@@ -1,0 +1,25 @@
+{
+  "name": "@lilylaw/grid",
+  "version": "1.0.0",
+  "description": "A JavaScript grid arrays constructor",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lily-law/grid.git"
+  },
+  "keywords": [
+    "matrix",
+    "array",
+    "nodejs",
+    "JavaScript"
+  ],
+  "author": "Lily Law",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lily-law/grid/issues"
+  },
+  "homepage": "https://github.com/lily-law/grid#readme"
+}
