@@ -2,7 +2,7 @@
 A JavaScript grid arrays constructor
 
 ## Install
-` $ npm install lilylaw/grid `
+` $ npm install @lilylaw/grid `
 
 ## usage
 ```
