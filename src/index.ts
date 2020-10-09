@@ -1,37 +1,131 @@
-function Grid(columns, rows, defaultValue) {
+import Cell from './Cell';
+
+interface Position {
+  row: number;
+  column: number;
+  block: number;
+  index: number;
+}
+
+function Grid({columns, rows, blockSize, defaultValue}: {columns: number; rows: number; blockSize: number[]; defaultValue?: any}) {
   this.height = rows;
   this.width = columns;
-  this.grid = new Array(rows).fill(new Array(columns).fill(defaultValue));
-  if (defaultValue === undefined) {
-    this.grid = this.grid.map((row, r) => row.map((cell, c) => c + r * this.width));
-  }
+  this.blockSize = blockSize || [columns, rows];
+  this.lookup = {
+    row: {},
+    column: {},
+    block: {},
+  };
+  this.grid = new Array(rows * columns).fill({}).map((cell, index) => {
+    const position = this.translate({index});
+    this.addToLookup(position);
+    return new Cell({position, data: defaultValue !== undefined ? defaultValue : index});
+  });
+  this.getCell = this.getCell.bind(this);
+
+  const self = this;
+  Object.defineProperties(this, {
+    cells: {
+      get() {
+        return [...self.grid.map((cell) => cell.data)];
+      },
+      set(arr) {
+        // reinitalise grid
+      },
+    },
+    rows: {
+      get() {
+        return self.getRows();
+      },
+      set(arr) {
+        // flatten arr and reinitalise grid
+      },
+    },
+    columns: {
+      get() {
+        return self.getColumns();
+      },
+      set(arr) {
+        // reverse getColumns and reinitalise grid
+      },
+    },
+    blocks: {
+      get() {
+        return self.getBlocks();
+      },
+      set(arr) {
+        // reverse getBlocks and reinitalise grid
+      },
+    },
+    diagonals: {
+      get() {
+        return self.getDiagonals();
+      },
+      set(arr) {
+        // reverse getDiagonals and reinitalise grid
+      },
+    },
+  });
 }
-Grid.prototype.setGrid = function (grid) {
-  this.grid = grid;
+Grid.prototype.rows = Grid.prototype.addToLookup = function (position: Position) {
+  const addType = ({type, location, index}) => (Array.isArray(this.lookup[type][location]) ? this.lookup[type][location].push(index) : (this.lookup[type][location] = [index]));
+  Object.keys(position)
+    .filter((type) => type !== 'index')
+    .forEach((type) => addType({type, location: position[type], index: position.index}));
 };
-Grid.prototype.rows = function () {
-  return this.grid.slice(0);
-};
-Grid.prototype.columns = function () {
-  const arr = [];
-  for (let c = 0; c < this.width; c++) {
-    arr.push(this.grid.map((row) => row[c]));
+Grid.prototype.translate = function ({index, row, column}: {index?: number; row?: number; column?: number}): Position {
+  if (index === undefined && (!row || !column)) {
+    throw Error('Grid.prototype.translate requires an index or row and column!');
   }
-  return arr;
+  let output = {
+    row,
+    column,
+    block: null,
+    index,
+  };
+  if (Number.isInteger(index)) {
+    const coordinates = this.translateCoordinate({index});
+    output = {...output, ...coordinates};
+  } else {
+    output.index = this.translateIndex({column, row});
+  }
+  const blockCol = Math.floor(output.column / this.blockSize[0]);
+  const blockRow = Math.floor(output.row / this.blockSize[1]);
+  output.block = blockCol + blockRow * this.blockSize[1];
+  return output;
 };
-Grid.prototype.diagonals = function () {
+Grid.prototype.translateIndex = function ({column, row}) {
+  return column + row * this.width;
+};
+Grid.prototype.translateCoordinate = function ({index}) {
+  return {column: index % this.width, row: Math.floor(index / this.width)};
+};
+Grid.prototype.getData = function (as) {
+  const output = Object.keys(this.lookup[as])
+    .sort()
+    .map((asIndex) => this.lookup[as][asIndex].map((cellIndex) => this.grid[cellIndex].data));
+  return output;
+};
+Grid.prototype.getRows = function () {
+  return this.getData('row');
+};
+Grid.prototype.getColumns = function () {
+  return this.getData('column');
+};
+Grid.prototype.getDiagonals = function () {
   const forwardSlashes = [];
   const backSlashes = [];
   let yShift = 0;
   let xShift = 0;
   let x = 0;
   let y = 0;
+  const grid = this.rows;
   while (xShift < this.width - 1 || yShift < this.height) {
     const forwardSlash = [];
     const backSlash = [];
     do {
-      backSlash.push(this.grid[y][this.width - 1 - x]);
-      forwardSlash.push(this.grid[y++][x--]);
+      backSlash.push(grid[y][this.width - 1 - x]);
+      forwardSlash.push(grid[y++][x--]);
     } while (x >= 0 && y < this.height);
     forwardSlashes.push(forwardSlash);
     backSlashes.push(backSlash);
@@ -45,96 +139,34 @@ Grid.prototype.diagonals = function () {
   }
   return [forwardSlashes, backSlashes];
 };
-Grid.prototype.blocks = function (width, height = width) {
-  if (width > this.width || height > this.height) {
-    console.error(`Grid.blocks given width: ${width} and ${height} exceeds maximum size width: ${this.width} and height: ${this.height}`);
-    return this.grid;
-  }
-  const widthRemainder = this.width % width;
-  const heightRemainder = this.height % height;
-  const useWidth = width - widthRemainder;
-  const useHeight = height - heightRemainder;
-  if ((useWidth <= 1 && useHeight <= 1) || (useWidth === this.width && useHeight === this.height)) {
-    console.warn('Grid.blocks width and height equal 1. Simply returing grid as flattened array');
-    return this.flattenArray(this.grid);
-  }
-  if (widthRemainder) {
-    console.warn(`Grid.blocks width: ${width} is not divisible by ${this.width} number of columns in grid. 
-        Using width of ${useWidth} instead.`);
-  }
-  if (heightRemainder) {
-    console.warn(`Grid.blocks height: ${height} is not divisible by ${this.height} number of row in grid
-        Using height of ${useHeight} instead.`);
-  }
-  const arr = [];
-  let wholeRowsFinished = 0;
-  let columnCarrage = 0;
-  const totalBlocks = (this.width * this.height) / (useWidth * useHeight);
-  for (let b = 0; b < totalBlocks; b++) {
-    let block = [];
-    let startBlock = useWidth * columnCarrage;
-    let endBlock = useWidth * (columnCarrage + 1);
-    for (let r = wholeRowsFinished; r < useHeight + wholeRowsFinished; r++) {
-      block.push(...this.grid[r].slice(startBlock, endBlock));
-    }
-    columnCarrage++;
-    if (endBlock >= this.width) {
-      columnCarrage = 0;
-      wholeRowsFinished += useHeight;
-    }
-    arr.push(block);
-  }
-  return arr;
+Grid.prototype.getBlocks = function () {
+  return this.getData('block');
 };
-Grid.prototype.nths = function (n, from = this.rows(), starting = 0) {
-  return this.flattenArray(from)
+Grid.prototype.getNths = function (n, starting = 0) {
+  return this.grid
     .slice(starting)
-    .filter((v, i) => i % n === 0);
+    .filter((v, i) => i % n === 0)
+    .map((cell) => cell.data);
 };
-Grid.prototype.merge = function (
-  withArr,
-  options = {
-    replaceIfBigger: false,
-    replaceIfSmaller: false,
-    insertWhereEmpty: true,
-    replaceAll: false,
+Grid.prototype.getCell = function ({index, column, row}) {
+  let output;
+  let cellIndex;
+  if (isValidNumber(index)) {
+    cellIndex = index;
+  } else if (isValidNumber(column) && isValidNumber(row)) {
+    cellIndex = this.translateIndex({column, row});
   }
-) {
-  const {replaceIfBigger, replaceIfSmaller, insertWhereEmpty, replaceAll} = options;
-  const newArr = this.flattenArray(withArr);
-  const processCondition = (newValue, existingValue) => {
-    if (!replaceAll) {
-      if (insertWhereEmpty) {
-        if (!existingValue) {
-          return newValue;
-        }
-        return existingValue;
-      } else if (!existingValue) {
-        return existingValue;
-      }
-      if (replaceIfBigger && newValue > existingValue) {
-        return newValue;
-      }
-      if (replaceIfSmaller && newValue < existingValue) {
-        return newValue;
-      }
-    } else {
-      return newValue;
+  if (cellIndex) {
+    const cell = this.grid[cellIndex];
+    if (cell) {
+      output = {...cell}.data;
     }
-  };
-  const newGrid = this.grid.map((row, rI) => row.map((cell, cI) => processCondition(newArr[cI + rI * this.width], cell)));
-  this.grid = newGrid;
-  return this.grid;
+  }
+  return output;
 };
-Grid.prototype.flattenArray = function (arr = this.rows()) {
-  return [].concat(...arr);
-};
-Grid.prototype.getIndex = function (x = 0, y = 0) {
-  return x + y * this.width;
-};
-Grid.prototype.getCoordinate = function (index = 0) {
-  return {x: index % this.width, y: Math.floor(index / this.width)};
-};
-module.exports = Grid;
 
-module.exports.default = Grid;
+export default Grid;
+
+function isValidNumber(n) {
+  return n !== null && !Array.isArray(n) && !isNaN(n) && !(typeof n === 'string' && n.trim() === '');
+}
