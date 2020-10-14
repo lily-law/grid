@@ -1,4 +1,5 @@
 import Cell from './Cell';
+import isActual from '@lilylaw/isactual';
 
 interface Position {
   row: number;
@@ -166,7 +167,3 @@ Grid.prototype.getCell = function ({index, column, row}) {
 };
 
 export default Grid;
-
-function isValidNumber(n) {
-  return n !== null && !Array.isArray(n) && !isNaN(n) && !(typeof n === 'string' && n.trim() === '');
-}

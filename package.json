@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/lily-law/grid#readme",
   "dependencies": {
+    "@lilylaw/isactual": "^1.0.0",
     "@types/node": "^14.11.5"
   }
 }
