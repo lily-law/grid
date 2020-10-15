@@ -101,7 +101,17 @@ function Grid(this: Grid, {columns, rows, blockSize, defaultValue}: {columns?: n
         return self.getColumns();
       },
       set(arr) {
-        // reverse getColumns and reinitalise grid
+        if (!Array.isArray(arr)) {
+          throw Error(`Cannot set columns with ${arr}`);
+        }
+        const flatArray = arr.flat().fill(null);
+        arr.forEach((col, column) =>
+          col.forEach((data: any, row: number) => {
+            const newIndex = this.translateIndex({column, row});
+            flatArray[newIndex] = data;
+          })
+        );
+        this.initGrid(flatArray);
       },
     },
     blocks: {
