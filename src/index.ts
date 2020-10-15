@@ -1,17 +1,63 @@
 import Cell from './Cell';
-import isActual from '@lilylaw/isactual';
 
-interface Position {
+interface CoordinateLocation {
+  [index: string]: number;
   row: number;
   column: number;
-  block: number;
+}
+interface IndexLocation {
+  [index: string]: number;
   index: number;
 }
+interface BlockLocation {
+  [index: string]: number | undefined;
+  block: number;
+  blockIndex?: number;
+  blockRow?: number;
+  blockColumn?: number;
+}
 
-function Grid({columns, rows, blockSize, defaultValue}: {columns: number; rows: number; blockSize: number[]; defaultValue?: any}) {
-  this.height = rows;
-  this.width = columns;
-  this.blockSize = blockSize || [columns, rows];
+type Position = CoordinateLocation & IndexLocation & BlockLocation;
+type CellLocation = CoordinateLocation | IndexLocation | BlockLocation;
+interface CellData {
+  data: any;
+}
+type Cell = CoordinateLocation & IndexLocation & BlockLocation & CellData;
+
+interface BlockSize {
+  width: number;
+  height: number;
+}
+
+interface Lookup {
+  [index: string]: object;
+  row: object;
+  column: object;
+  block: object;
+}
+type LookupType = 'row' | 'column' | 'block' | string;
+
+interface Grid {
+  height: number;
+  width: number;
+  blockSize: BlockSize;
+  lookup: Lookup;
+  grid: Cell[];
+  initGrid: (arr: any[]) => void;
+  getRows: () => any[];
+  getColumns: () => any[];
+  getBlocks: () => any[];
+  getDiagonals: () => any[];
+  translateIndex: (cellLocation: CellLocation, width?: number) => number;
+  cells: any[];
+  rows: any[];
+  columns: any[];
+  blocks: any[];
+  diagonals: any[];
+  getNths: (n: number, starting?: number) => any[];
+  getCell: (cellLocation: CellLocation) => any;
+  updateCells: (arr: (CellLocation & CellData)[]) => boolean;
+}
   this.lookup = {
     row: {},
     column: {},
