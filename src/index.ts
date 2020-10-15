@@ -141,8 +141,25 @@ Grid.prototype.translate = function ({index, row, column}: {index?: number; row?
   output.block = blockCol + blockRow * this.blockSize[1];
   return output;
 };
-Grid.prototype.translateIndex = function ({column, row}) {
-  return column + row * this.width;
+Grid.prototype.translateIndex = function (this: Grid, cellLocation: CellLocation, width: number = this.width): number {
+  const {index, column, row, block, blockIndex, blockRow, blockColumn} = cellLocation;
+  let cellIndex;
+  if (cellLocation.index || cellLocation.index === 0) {
+    cellIndex = index;
+  } else if ((column || column === 0) && (row || row === 0)) {
+    cellIndex = column + row * width;
+  } else if (block || block === 0) {
+    if (blockIndex || blockIndex === 0) {
+      cellIndex = block * (this.blockSize.width * this.blockSize.height) + blockIndex;
+    } else if ((blockRow || blockRow === 0) && (blockColumn || blockColumn === 0)) {
+      const blockIndex = this.translateIndex({row: blockRow, column: blockColumn}, this.blockSize.width);
+      cellIndex = this.translateIndex({block, blockIndex});
+    }
+  }
+  if (!(cellIndex || cellIndex === 0)) {
+    throw Error(`Grid.prototype.translateIndex failed to produce an index. Input arguments: cellLocation: ${cellLocation} width: ${width}`)
+  }
+  return cellIndex
 };
 Grid.prototype.translateCoordinate = function ({index}) {
   return {column: index % this.width, row: Math.floor(index / this.width)};
