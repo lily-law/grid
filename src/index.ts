@@ -89,7 +89,11 @@ function Grid(this: Grid, {columns, rows, blockSize, defaultValue}: {columns?: n
         return self.getRows();
       },
       set(arr) {
-        // flatten arr and reinitalise grid
+        const flatArray = Array.isArray(arr) && arr.flat();
+        if (!flatArray) {
+          throw Error(`Cannot set rows with ${arr}`);
+        }
+        this.initGrid(flatArray);
       },
     },
     columns: {
