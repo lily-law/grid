@@ -75,10 +75,13 @@ function Grid(this: Grid, {columns, rows, blockSize, defaultValue}: {columns?: n
   Object.defineProperties(this, {
     cells: {
       get() {
-        return [...self.grid.map((cell) => cell.data)];
+        return self.grid.map((cell: Cell) => cell.data);
       },
       set(arr) {
-        // reinitalise grid
+        if (!Array.isArray(arr)) {
+          throw Error(`Cannot set cells to be of type ${typeof arr}, must be an array!`);
+        }
+        this.initGrid(arr);
       },
     },
     rows: {
