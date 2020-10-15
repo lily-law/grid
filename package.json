@@ -4,7 +4,15 @@
   "description": "A JavaScript grid arrays constructor",
   "main": "built/index.js",
   "scripts": {
-    "test": "tsc && node built/test.js"
+    "build": "tsc",
+    "test": "tsc --build tsconfig.test.json && node tests/build/tests/test.js",
+    "format": "prettier --write \"src/**/*\" ",
+    "lint": "npx eslint \"src/**/*.{js,ts,tsx}\" --fix",
+    "prepare": "npm run build",
+    "preversion": "npm run lint",
+    "prepublishOnly": "npm run lint",
+    "version": "npm run format && git add -A src",
+    "postversion": "git push && git push --tags"
   },
   "repository": {
     "type": "git",
