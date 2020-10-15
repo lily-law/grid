@@ -58,6 +58,11 @@ interface Grid {
   getCell: (cellLocation: CellLocation) => any;
   updateCells: (arr: (CellLocation & CellData)[]) => boolean;
 }
+
+function Grid(this: Grid, {columns, rows, blockSize, defaultValue}: {columns?: number; rows?: number; blockSize: {width: number; height?: number}; defaultValue?: any}): void {
+  this.height = rows || columns || 3;
+  this.width = columns || this.height;
+  this.blockSize = {width: blockSize.width, height: blockSize.height || blockSize.width};
   this.lookup = {
     row: {},
     column: {},
