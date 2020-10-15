@@ -164,7 +164,14 @@ Grid.prototype.translateIndex = function (this: Grid, cellLocation: CellLocation
 Grid.prototype.translateCoordinate = function ({index}) {
   return {column: index % this.width, row: Math.floor(index / this.width)};
 };
-Grid.prototype.getData = function (as) {
+Grid.prototype.translateBlock = function ({column, row}: CoordinateLocation): number {
+  const blockCol = Math.floor(column / this.blockSize.width);
+  const blockRow = Math.floor(row / this.blockSize.height);
+  return blockCol + blockRow * this.blockSize.height;
+};
+Grid.prototype.translateBlockIndex = function ({blockColumn, blockRow}: {blockColumn: number; blockRow: number}) {
+  return this.blockSize.width * blockRow + blockColumn;
+};
   const output = Object.keys(this.lookup[as])
     .sort()
     .map((asIndex) => this.lookup[as][asIndex].map((cellIndex) => this.grid[cellIndex].data));
