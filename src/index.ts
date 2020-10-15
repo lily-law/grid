@@ -235,5 +235,30 @@ Grid.prototype.getCell = function ({index, column, row}) {
   }
   return output;
 };
+Grid.prototype.updateCells = function (arr: (CellLocation & CellData)[]) {
+  arr.forEach(({index, column, row, block, blockIndex, blockRow, blockColumn, data}) => {
+    let cellIndex;
+    if (index || index === 0) {
+      cellIndex = index;
+    } else if ((column || column === 0) && (row || row === 0)) {
+      cellIndex = this.lookup.row[row][column];
+    } else if (block || block === 0) {
+      if ((blockRow || blockRow === 0) && (blockColumn || blockColumn === 0)) {
+        blockIndex = this.translateBlockIndex({blockColumn, blockRow});
+      }
+      if (blockIndex || blockIndex === 0) {
+        cellIndex = this.lookup.block[block][blockIndex];
+      }
+    }
+    const cell = (cellIndex || cellIndex === 0) && this.grid[cellIndex];
+    if (cell) {
+      cell.data = data;
+      return true;
+    }
+    else {
+      return false;
+    }
+  });
+};
 
 export default Grid;
