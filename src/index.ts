@@ -1,41 +1,34 @@
 import Cell from './Cell';
+import isActual from '@lilylaw/isactual';
 
-interface CoordinateLocation {
-  [index: string]: number;
-  row: number;
-  column: number;
+type PositionTypes = 'index' | 'row' | 'column' | 'block';
+type Position = {
+  [P in PositionTypes]: number
 }
-interface IndexLocation {
-  [index: string]: number;
-  index: number;
+type CellLocationTypes = PositionTypes | 'blockIndex' | 'blockColumn' | 'blockRow';
+type CellLocation = {
+  [L in CellLocationTypes]?: number;
 }
-interface BlockLocation {
-  [index: string]: number | undefined;
-  block: number;
-  blockIndex?: number;
-  blockRow?: number;
-  blockColumn?: number;
-}
-
-type Position = CoordinateLocation & IndexLocation & BlockLocation;
-type CellLocation = CoordinateLocation | IndexLocation | BlockLocation;
 interface CellData {
   data: any;
 }
-type Cell = CoordinateLocation & IndexLocation & BlockLocation & CellData;
+type Cell = Position & CellData;
 
 interface BlockSize {
   width: number;
   height: number;
 }
 
-interface Lookup {
-  [index: string]: object;
-  row: object;
-  column: object;
-  block: object;
+type LookupType = 'row' | 'column' | 'block';
+interface LookupTable {
+  [propName: number]: number[];
 }
-type LookupType = 'row' | 'column' | 'block' | string;
+interface Lookup {
+  [propName: string]: LookupTable;
+  row: LookupTable;
+  column: LookupTable;
+  block: LookupTable;
+}
 
 interface Grid {
   height: number;
@@ -48,89 +41,78 @@ interface Grid {
   getColumns: () => any[];
   getBlocks: () => any[];
   getDiagonals: () => any[];
-  translateIndex: (cellLocation: CellLocation, width?: number) => number;
-  cells: any[];
-  rows: any[];
-  columns: any[];
-  blocks: any[];
-  diagonals: any[];
   getNths: (n: number, starting?: number) => any[];
   getCell: (cellLocation: CellLocation) => any;
-  updateCells: (arr: (CellLocation & CellData)[]) => boolean;
+  updateCells: (arr: (CellLocation & CellData)[]) => CellData[];
+  translate: ({index, row, column}: {index?: number; row?: number; column?: number}) => Position;
+  translateIndex: (cellLocation: CellLocation, width?: number) => number;
+  translateCoordinate: ({index}: CellLocation) => CellLocation;
+  translateBlock: ({column, row}: CellLocation) => number;
+  translateBlockIndex: ({blockColumn, blockRow}: CellLocation) => number;
+  getDataUsingLookup: (as: LookupType) => any[];
+  addToLookup: (position: Position) => void;
 }
 
-function Grid(this: Grid, {columns, rows, blockSize, defaultValue}: {columns?: number; rows?: number; blockSize: {width: number; height?: number}; defaultValue?: any}): void {
-  this.height = rows || columns || 3;
-  this.width = columns || this.height;
-  this.blockSize = {width: blockSize.width, height: blockSize.height || blockSize.width};
-  this.lookup = {
-    row: {},
-    column: {},
-    block: {},
-  };
-  this.grid = [];
-  this.initGrid(new Array(this.height * this.width).fill({}).map((cell, index) => (defaultValue !== undefined ? defaultValue : index)));
-
-  const self = this;
-  Object.defineProperties(this, {
-    cells: {
-      get() {
-        return self.grid.map((cell: Cell) => cell.data);
-      },
-      set(arr) {
-        if (!Array.isArray(arr)) {
-          throw Error(`Cannot set cells to be of type ${typeof arr}, must be an array!`);
-        }
-        this.initGrid(arr);
-      },
-    },
-    rows: {
-      get() {
-        return self.getRows();
-      },
-      set(arr) {
-        const flatArray = Array.isArray(arr) && arr.flat();
-        if (!flatArray) {
-          throw Error(`Cannot set rows with ${arr}`);
-        }
-        this.initGrid(flatArray);
-      },
-    },
-    columns: {
-      get() {
-        return self.getColumns();
-      },
-      set(arr) {
-        if (!Array.isArray(arr)) {
-          throw Error(`Cannot set columns with ${arr}`);
-        }
-        const flatArray = arr.flat().fill(null);
-        arr.forEach((col, column) =>
-          col.forEach((data: any, row: number) => {
-            const newIndex = this.translateIndex({column, row});
-            flatArray[newIndex] = data;
-          })
-        );
-        this.initGrid(flatArray);
-      },
-    },
-    blocks: {
-      get() {
-        return self.getBlocks();
-      },
-      set(arr) {
-        // reverse getBlocks and reinitalise grid
-      },
-    },
-    diagonals: {
-      get() {
-        return self.getDiagonals();
-      },
-      set(arr) {
-        // reverse getDiagonals and reinitalise grid
-      },
-    },
-  });
+class Grid {
+  constructor({columns, rows, blockSize, defaultValue}: {columns?: number; rows?: number; blockSize: {width: number; height?: number}; defaultValue?: any}) {
+    this.height = rows || columns || 3;
+    this.width = columns || this.height;
+    this.blockSize = {width: blockSize.width, height: blockSize.height || blockSize.width};
+    this.lookup = {
+      row: {},
+      column: {},
+      block: {},
+    };
+    this.grid = [];
+    this.initGrid(new Array(this.height * this.width).fill({}).map((cell, index) => (defaultValue !== undefined ? defaultValue : index)));
+  }
+  get cells() {
+    return this.grid.map((cell: Cell) => cell.data);
+  }
+  set cells(arr) {
+    if (!Array.isArray(arr)) {
+      throw Error(`Cannot set cells to be of type ${typeof arr}, must be an array!`);
+    }
+    this.initGrid(arr);
+  }
+  get rows() {
+    return this.getRows();
+  }
+  set rows(arr) {
+    const flatArray = Array.isArray(arr) && arr.flat();
+    if (!flatArray) {
+      throw Error(`Cannot set rows with ${arr}`);
+    }
+    this.initGrid(flatArray);
+  }
+  get columns() {
+    return this.getColumns();
+  }
+  set columns(arr) {
+    if (!Array.isArray(arr)) {
+      throw Error(`Cannot set columns with ${arr}`);
+    }
+    const flatArray = arr.flat().fill(null);
+    arr.forEach((col, column) =>
+      col.forEach((data: any, row: number) => {
+        const newIndex = this.translateIndex({column, row});
+        flatArray[newIndex] = data;
+      })
+    );
+    this.initGrid(flatArray);
+  }
+  get blocks() {
+    return this.getBlocks();
+  }
+  set blocks(arr) {
+    // reverse getBlocks and reinitalise grid
+  }
+  get diagonals() {
+    return this.getDiagonals();
+  }
+  set diagonals(arr) {
+    // reverse getDiagonals and reinitalise grid
+  }
 }
 Grid.prototype.initGrid = function (arr: any[]) {
   this.lookup = {
@@ -146,74 +128,103 @@ Grid.prototype.initGrid = function (arr: any[]) {
     }
   );
 };
-Grid.prototype.addToLookup = function (position: Position) {
-  const addEntry = ({type, location, index}: {type: LookupType; location: any; index: number}) =>
-    Array.isArray(this.lookup[type][location]) ? this.lookup[type][location].push(index) : (this.lookup[type][location] = [index]);
-  Object.keys(position)
-    .filter((type) => type !== 'index')
-    .forEach((type) => addEntry({type, location: position[type], index: position.index}));
+Grid.prototype.addToLookup = function (position) {
+  const addEntry = ({type, index}: {type: PositionTypes; index: number}) => {
+    const location = position[type]
+    const lookupTable = this.lookup[type];
+    if (lookupTable) {
+      if (Array.isArray(lookupTable[location])) {
+        lookupTable[location].push(index)
+      } else { 
+        lookupTable[location] = [index]; 
+      }
+    }
+  }
+  (Object.keys(position) as PositionTypes[]).forEach((type) => addEntry({type, index: position.index}));
 };
-Grid.prototype.translate = function ({index, row, column}: {index?: number; row?: number; column?: number}): Position {
+Grid.prototype.translate = function ({index, row, column}) {
   if (index === undefined && (!row || !column)) {
     throw Error('Grid.prototype.translate requires an index or row and column!');
   }
-  let output: Position = {
-    row: row || NaN,
-    column: column || NaN,
-    block: NaN,
-    index: index || NaN,
-  };
-  if (index || index === 0) {
+  let block;
+  if (isActual.number(index)) {
     const coordinates = this.translateCoordinate({index});
-    output = {...output, ...coordinates};
+    row = coordinates.row;
+    column = coordinates.column;
   } else {
-    output.index = this.translateIndex({column, row});
+    index = this.translateIndex({column, row});
   }
-  output.block = this.translateBlock({column: output.column, row: output.row});
-  return output;
+  block = this.translateBlock({column, row});
+  if ([row, column, block, index].some(output => isActual.number(output))) {
+    return ({
+      row,
+      column,
+      block,
+      index
+    } as Position);
+  }
+  else {
+    throw Error(`Grid.prototype.translate failed to produce a complete position. Output: row: ${row}, column: ${column}, block: ${block}, index: ${index}`);
+  }
 };
-Grid.prototype.translateIndex = function (this: Grid, cellLocation: CellLocation, width: number = this.width): number {
+Grid.prototype.translateIndex = function translateIndex(this: Grid, cellLocation, width = this.width) {
   const {index, column, row, block, blockIndex, blockRow, blockColumn} = cellLocation;
   let cellIndex;
-  if (cellLocation.index || cellLocation.index === 0) {
+  if (isActual.number(cellLocation.index)) {
     cellIndex = index;
-  } else if ((column || column === 0) && (row || row === 0)) {
-    cellIndex = column + row * width;
-  } else if (block || block === 0) {
-    if (blockIndex || blockIndex === 0) {
-      cellIndex = block * (this.blockSize.width * this.blockSize.height) + blockIndex;
-    } else if ((blockRow || blockRow === 0) && (blockColumn || blockColumn === 0)) {
+  } else if ((isActual.number(column)) && (isActual.number(row))) {
+    cellIndex = (column as number) + (row as number) * width;
+  } else if (isActual.number(block)) {
+    if (isActual.number(blockIndex)) {
+      cellIndex = (block as number) * (this.blockSize.width * this.blockSize.height) + (blockIndex as number);
+    } else if ((isActual.number(blockRow)) && (isActual.number(blockColumn))) {
       const blockIndex = this.translateIndex({row: blockRow, column: blockColumn}, this.blockSize.width);
       cellIndex = this.translateIndex({block, blockIndex});
     }
   }
-  if (!(cellIndex || cellIndex === 0)) {
+  if (!(isActual.number(cellIndex))) {
     throw Error(`Grid.prototype.translateIndex failed to produce an index. Input arguments: cellLocation: ${cellLocation} width: ${width}`)
   }
-  return cellIndex
+  return (cellIndex as number)
 };
-Grid.prototype.translateCoordinate = function ({index}: IndexLocation): CoordinateLocation {
-  return {column: index % this.width, row: Math.floor(index / this.width)};
+Grid.prototype.translateCoordinate = function translateCoordinate({index}) {
+  if (isActual.number(index)) {
+    return {column: (index as number) % this.width, row: Math.floor((index as number) / this.width)};
+  }
+  else {
+    throw Error(`Grid.prototype.translateCoordinate failed to produce a coordinate. Input argument: index: ${index}`);
+  }
 };
-Grid.prototype.translateBlock = function ({column, row}: CoordinateLocation): number {
-  const blockCol = Math.floor(column / this.blockSize.width);
-  const blockRow = Math.floor(row / this.blockSize.height);
-  return blockCol + blockRow * this.blockSize.height;
+Grid.prototype.translateBlock = function ({column, row}) {
+  if (isActual.number(column) && isActual.number(row)) {
+    const blockCol = Math.floor((column as number) / this.blockSize.width);
+    const blockRow = Math.floor((row as number) / this.blockSize.height);
+    return blockCol + blockRow * this.blockSize.height;
+  }
+  else {
+    throw Error(`Grid.prototype.translateBlock requires both column and row arguments to be a number. Input arguments: row: ${row}, column: ${column}`);
+  }
+  
 };
-Grid.prototype.translateBlockIndex = function ({blockColumn, blockRow}: {blockColumn: number; blockRow: number}) {
-  return this.blockSize.width * blockRow + blockColumn;
+Grid.prototype.translateBlockIndex = function ({blockColumn, blockRow}) {
+  if (isActual.number(blockColumn) && isActual.number(blockRow)) {
+    return this.blockSize.width * (blockRow as number) + (blockColumn as number);
+  }
+  else {
+    throw Error(`Grid.prototype.translateBlockIndex requires both blockColumn and blockRow arguments to be a number. Input arguments: blockColumn: ${blockColumn}, blockRow: ${blockRow}`);
+  }
 };
-Grid.prototype.getData = function (as: LookupType) {
+Grid.prototype.getDataUsingLookup = function (as) {
   const output = Object.keys(this.lookup[as])
     .sort()
-    .map((asIndex) => this.lookup[as][asIndex].map((cellIndex: number) => this.grid[cellIndex].data));
+    .map((asIndex) => this.lookup[as][parseInt(asIndex)].map((cellIndex: number) => this.grid[cellIndex].data));
   return output;
 };
 Grid.prototype.getRows = function () {
-  return this.getData('row');
+  return this.getDataUsingLookup('row');
 };
 Grid.prototype.getColumns = function () {
-  return this.getData('column');
+  return this.getDataUsingLookup('column');
 };
 Grid.prototype.getDiagonals = function () {
   const forwardSlashes = [];
@@ -243,7 +254,7 @@ Grid.prototype.getDiagonals = function () {
   return [forwardSlashes, backSlashes];
 };
 Grid.prototype.getBlocks = function () {
-  return this.getData('block');
+  return this.getDataUsingLookup('block');
 };
 Grid.prototype.getNths = function (n: number, starting = 0) {
   return this.grid
@@ -254,9 +265,9 @@ Grid.prototype.getNths = function (n: number, starting = 0) {
 Grid.prototype.getCell = function ({index, column, row}: CellLocation) {
   let output;
   let cellIndex;
-  if (index || index === 0) {
+  if (isActual.number(index)) {
     cellIndex = index;
-  } else if ((column || column === 0) && (row || row === 0)) {
+  } else if ((isActual.number(column)) && (isActual.number(row))) {
     cellIndex = this.translateIndex({column, row});
   }
   if (cellIndex) {
@@ -267,30 +278,27 @@ Grid.prototype.getCell = function ({index, column, row}: CellLocation) {
   }
   return output;
 };
-Grid.prototype.updateCells = function (arr: (CellLocation & CellData)[]) {
+Grid.prototype.updateCells = function updateCells(arr) {
   arr.forEach(({index, column, row, block, blockIndex, blockRow, blockColumn, data}) => {
     let cellIndex;
-    if (index || index === 0) {
+    if (isActual.number(index)) {
       cellIndex = index;
-    } else if ((column || column === 0) && (row || row === 0)) {
-      cellIndex = this.lookup.row[row][column];
-    } else if (block || block === 0) {
-      if ((blockRow || blockRow === 0) && (blockColumn || blockColumn === 0)) {
+    } else if ((isActual.number(column)) && (isActual.number(row))) {
+      cellIndex = this.lookup.row[(row as number)][(column as number)];
+    } else if (isActual.number(block)) {
+      if ((isActual.number(blockRow)) && (isActual.number(blockColumn))) {
         blockIndex = this.translateBlockIndex({blockColumn, blockRow});
       }
-      if (blockIndex || blockIndex === 0) {
-        cellIndex = this.lookup.block[block][blockIndex];
+      if (isActual.number(blockIndex)) {
+        cellIndex = this.lookup.block[(block as number)][(blockIndex as number)];
       }
     }
-    const cell = (cellIndex || cellIndex === 0) && this.grid[cellIndex];
+    const cell = (isActual.number(cellIndex)) && this.grid[(cellIndex as number)];
     if (cell) {
       cell.data = data;
-      return true;
-    }
-    else {
-      return false;
     }
   });
+  return this.cells
 };
 
 export default Grid;
