@@ -192,7 +192,7 @@ Grid.prototype.translateIndex = function (this: Grid, cellLocation: CellLocation
   }
   return cellIndex
 };
-Grid.prototype.translateCoordinate = function ({index}) {
+Grid.prototype.translateCoordinate = function ({index}: IndexLocation): CoordinateLocation {
   return {column: index % this.width, row: Math.floor(index / this.width)};
 };
 Grid.prototype.translateBlock = function ({column, row}: CoordinateLocation): number {
@@ -203,9 +203,10 @@ Grid.prototype.translateBlock = function ({column, row}: CoordinateLocation): nu
 Grid.prototype.translateBlockIndex = function ({blockColumn, blockRow}: {blockColumn: number; blockRow: number}) {
   return this.blockSize.width * blockRow + blockColumn;
 };
+Grid.prototype.getData = function (as: LookupType) {
   const output = Object.keys(this.lookup[as])
     .sort()
-    .map((asIndex) => this.lookup[as][asIndex].map((cellIndex) => this.grid[cellIndex].data));
+    .map((asIndex) => this.lookup[as][asIndex].map((cellIndex: number) => this.grid[cellIndex].data));
   return output;
 };
 Grid.prototype.getRows = function () {
@@ -244,18 +245,18 @@ Grid.prototype.getDiagonals = function () {
 Grid.prototype.getBlocks = function () {
   return this.getData('block');
 };
-Grid.prototype.getNths = function (n, starting = 0) {
+Grid.prototype.getNths = function (n: number, starting = 0) {
   return this.grid
     .slice(starting)
-    .filter((v, i) => i % n === 0)
-    .map((cell) => cell.data);
+    .filter((v: Cell, i: number) => i % n === 0)
+    .map((cell: Cell) => cell.data);
 };
-Grid.prototype.getCell = function ({index, column, row}) {
+Grid.prototype.getCell = function ({index, column, row}: CellLocation) {
   let output;
   let cellIndex;
-  if (isValidNumber(index)) {
+  if (index || index === 0) {
     cellIndex = index;
-  } else if (isValidNumber(column) && isValidNumber(row)) {
+  } else if ((column || column === 0) && (row || row === 0)) {
     cellIndex = this.translateIndex({column, row});
   }
   if (cellIndex) {
