@@ -105,13 +105,26 @@ class Grid {
     return this.getBlocks();
   }
   set blocks(arr) {
-    // reverse getBlocks and reinitalise grid
+    if (!Array.isArray(arr)) {
+      throw Error(`Cannot set blocks with ${arr}`);
+    }
+    const tempRows: number[][] = [];
+    let blockCount = 0;
+    for (let block of arr) {
+      for (let i=0;i<this.blockSize.height;i++) {
+        const start = i*(this.blockSize.width);
+        const end = start + this.blockSize.width;
+        const segment = block.slice(start, end);
+        const rowIndex = i + (Math.floor(blockCount / this.blockSize.width) * this.blockSize.width);
+        Array.isArray(tempRows[rowIndex]) ? tempRows[rowIndex].push(...segment) : tempRows[rowIndex] = segment;
+      }
+      blockCount++;
+    }
+    const flatArray = tempRows.flat();
+    this.initGrid(flatArray);
   }
   get diagonals() {
     return this.getDiagonals();
-  }
-  set diagonals(arr) {
-    // reverse getDiagonals and reinitalise grid
   }
 }
 Grid.prototype.initGrid = function (arr: any[]) {
