@@ -68,12 +68,8 @@ function Grid(this: Grid, {columns, rows, blockSize, defaultValue}: {columns?: n
     column: {},
     block: {},
   };
-  this.grid = new Array(rows * columns).fill({}).map((cell, index) => {
-    const position = this.translate({index});
-    this.addToLookup(position);
-    return new Cell({position, data: defaultValue !== undefined ? defaultValue : index});
-  });
-  this.getCell = this.getCell.bind(this);
+  this.grid = [];
+  this.initGrid(new Array(this.height * this.width).fill({}).map((cell, index) => (defaultValue !== undefined ? defaultValue : index)));
 
   const self = this;
   Object.defineProperties(this, {
@@ -119,31 +115,44 @@ function Grid(this: Grid, {columns, rows, blockSize, defaultValue}: {columns?: n
     },
   });
 }
-Grid.prototype.rows = Grid.prototype.addToLookup = function (position: Position) {
-  const addType = ({type, location, index}) => (Array.isArray(this.lookup[type][location]) ? this.lookup[type][location].push(index) : (this.lookup[type][location] = [index]));
+Grid.prototype.initGrid = function (arr: any[]) {
+  this.lookup = {
+    row: {},
+    column: {},
+    block: {},
+  };
+  this.grid = arr.map(
+    (data: any, index: number): Cell => {
+      const position = this.translate({index});
+      this.addToLookup(position);
+      return new (Cell as any)({position, data});
+    }
+  );
+};
+Grid.prototype.addToLookup = function (position: Position) {
+  const addEntry = ({type, location, index}: {type: LookupType; location: any; index: number}) =>
+    Array.isArray(this.lookup[type][location]) ? this.lookup[type][location].push(index) : (this.lookup[type][location] = [index]);
   Object.keys(position)
     .filter((type) => type !== 'index')
-    .forEach((type) => addType({type, location: position[type], index: position.index}));
+    .forEach((type) => addEntry({type, location: position[type], index: position.index}));
 };
 Grid.prototype.translate = function ({index, row, column}: {index?: number; row?: number; column?: number}): Position {
   if (index === undefined && (!row || !column)) {
     throw Error('Grid.prototype.translate requires an index or row and column!');
   }
-  let output = {
-    row,
-    column,
-    block: null,
-    index,
+  let output: Position = {
+    row: row || NaN,
+    column: column || NaN,
+    block: NaN,
+    index: index || NaN,
   };
-  if (Number.isInteger(index)) {
+  if (index || index === 0) {
     const coordinates = this.translateCoordinate({index});
     output = {...output, ...coordinates};
   } else {
     output.index = this.translateIndex({column, row});
   }
-  const blockCol = Math.floor(output.column / this.blockSize[0]);
-  const blockRow = Math.floor(output.row / this.blockSize[1]);
-  output.block = blockCol + blockRow * this.blockSize[1];
+  output.block = this.translateBlock({column: output.column, row: output.row});
   return output;
 };
 Grid.prototype.translateIndex = function (this: Grid, cellLocation: CellLocation, width: number = this.width): number {
