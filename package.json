@@ -2,7 +2,7 @@
   "name": "@lilylaw/grid",
   "version": "1.0.1",
   "description": "A JavaScript grid arrays constructor",
-  "main": "built/index.js",
+  "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
     "test": "tsc --build tsconfig.test.json && node tests/build/tests/test.js",
