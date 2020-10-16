@@ -12,8 +12,6 @@ type CellLocation = {
 interface CellData {
   data: any;
 }
-type Cell = Position & CellData;
-
 interface BlockSize {
   width: number;
   height: number;
@@ -136,7 +134,7 @@ Grid.prototype.initGrid = function (arr: any[]) {
     (data: any, index: number): Cell => {
       const position = this.translate({index});
       this.addToLookup(position);
-      return new (Cell as any)({position, data});
+      return new Cell({position, data});
     }
   );
 };
