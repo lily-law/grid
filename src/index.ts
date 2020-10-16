@@ -53,7 +53,7 @@ interface Grid {
 }
 
 class Grid {
-  constructor({columns, rows, blockSize, defaultValue}: {columns?: number; rows?: number; blockSize: {width: number; height?: number}; defaultValue?: any}) {
+  constructor({columns, rows, blockSize}: {columns?: number; rows?: number; blockSize: {width: number; height?: number};}) {
     this.height = rows || columns || 3;
     this.width = columns || this.height;
     this.blockSize = {width: blockSize.width, height: blockSize.height || blockSize.width};
@@ -63,7 +63,7 @@ class Grid {
       block: {},
     };
     this.grid = [];
-    this.initGrid(new Array(this.height * this.width).fill({}).map((cell, index) => (defaultValue !== undefined ? defaultValue : index)));
+    this.initGrid(new Array(this.height * this.width).fill(0).map((cell, index) => index));
   }
   get cells() {
     return this.grid.map((cell: Cell) => cell.data);
