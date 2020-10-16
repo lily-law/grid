@@ -1,6 +1,6 @@
 {
   "name": "@lilylaw/grid",
-  "version": "1.0.1",
+  "version": "2.0.1",
   "description": "A JavaScript grid arrays constructor",
   "main": "lib/index.js",
   "scripts": {
