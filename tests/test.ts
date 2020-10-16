@@ -103,7 +103,7 @@ test(
   new Array(81).fill(0).map((c, i) => i)
 );
 test(
-  'rows = [...reversedArray]',
+  'rows = [...reversedRowsArray]',
   (grid.rows = [
     [80, 79, 78, 77, 76, 75, 74, 73, 72],
     [71, 70, 69, 68, 67, 66, 65, 64, 63],
@@ -128,7 +128,7 @@ test(
   ]
 );
 test(
-  'columns = [...sequencialNumbers]',
+  'columns = [...sequencialNumbersColumnsArray]',
   (grid.columns = [
     [0, 9, 18, 27, 36, 45, 54, 63, 72],
     [1, 10, 19, 28, 37, 46, 55, 64, 73],
@@ -153,7 +153,7 @@ test(
   ]
 );
 test(
-  'blocks = [...reversedArray]',
+  'blocks = [...reversedBlocksArray]',
   ((grid.blocks = [
     [80, 79, 78, 71, 70, 69, 62, 61, 60],
     [77, 76, 75, 68, 67, 66, 59, 58, 57],
