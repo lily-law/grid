@@ -40,7 +40,7 @@ interface Grid {
   getRows: () => any[];
   getColumns: () => any[];
   getBlocks: () => any[];
-  getDiagonals: () => any[];
+  getDiagonals: () => {forward: any[], backward: any[]};
   getNths: (n: number, starting?: number) => any[];
   updateCells: (arr: (CellLocation & CellData)[]) => CellData[];
   translate: ({index, row, column}: {index?: number; row?: number; column?: number}) => Position;
@@ -263,7 +263,7 @@ Grid.prototype.getDiagonals = function () {
       x = xShift;
     }
   }
-  return [forwardSlashes, backSlashes];
+  return {forward: forwardSlashes, backward: backSlashes};
 };
 Grid.prototype.getBlocks = function () {
   return this.getDataUsingLookup('block');

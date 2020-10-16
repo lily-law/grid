@@ -46,8 +46,8 @@ test('blocks', grid.blocks, [
   [57, 58, 59, 66, 67, 68, 75, 76, 77],
   [60, 61, 62, 69, 70, 71, 78, 79, 80],
 ]);
-test('diagonals', grid.diagonals, [
-  [
+test('diagonals', grid.diagonals, {
+  forward: [
     [0],
     [1, 9],
     [2, 10, 18],
@@ -66,7 +66,7 @@ test('diagonals', grid.diagonals, [
     [71, 79],
     [80],
   ],
-  [
+  backward: [
     [8],
     [7, 17],
     [6, 16, 26],
@@ -85,7 +85,7 @@ test('diagonals', grid.diagonals, [
     [63, 73],
     [72],
   ],
-]);
+});
 test('getNths(3)', grid.getNths(3), [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69, 72, 75, 78]);
 test(
   'grid.updateCells([{index: 5, data: 0}, {column: 0, row: 1, data: 0}, {block: 0, blockIndex: 2, data: 0}])',
