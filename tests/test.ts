@@ -5,8 +5,8 @@ const rows = 9;
 const blockSize = {width: 3};
 const verbose = args.length > 0 && args[0].toLowerCase() == 'verbose';
 
-console.group();
-const grid = new Grid({columns, rows, blockSize});
+console.group(`Testing grid: new Grid({columns: ${columns}, rows ${rows}, blockSize: ${blockSize}, wrapReturnedValuesWithGridData: false})`);
+const grid = new Grid({columns, rows, blockSize, wrapReturnedValuesWithGridData: false});
 
 test(
   'cells',
@@ -88,11 +88,11 @@ test('diagonals', grid.diagonals, {
 });
 test('getNths(3)', grid.getNths(3), [0, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69, 72, 75, 78]);
 test(
-  'grid.updateCells([{index: 5, data: 0}, {column: 0, row: 1, data: 0}, {block: 0, blockIndex: 2, data: 0}])',
+  'grid.updateCells([{index: 5, value: 0}, {column: 0, row: 1, value: 0}, {block: 0, blockIndex: 2, value: 0}])',
   (grid.updateCells([
-    {index: 5, data: 0},
-    {column: 0, row: 1, data: 0},
-    {block: 0, blockIndex: 2, data: 0},
+    {index: 5, value: 0},
+    {column: 0, row: 1, value: 0},
+    {block: 0, blockIndex: 2, value: 0},
   ]),
   [grid.cells[5], grid.columns[0][1], grid.blocks[0][2]]),
   [0, 0, 0]
@@ -114,7 +114,7 @@ test(
     [26, 25, 24, 23, 22, 21, 20, 19, 18],
     [17, 16, 15, 14, 13, 12, 11, 10, 9],
     [8, 7, 6, 5, 4, 3, 2, 1, 0],
-  ]),
+  ], grid.rows),
   [
     [80, 79, 78, 77, 76, 75, 74, 73, 72],
     [71, 70, 69, 68, 67, 66, 65, 64, 63],
@@ -139,7 +139,7 @@ test(
     [6, 15, 24, 33, 42, 51, 60, 69, 78],
     [7, 16, 25, 34, 43, 52, 61, 70, 79],
     [8, 17, 26, 35, 44, 53, 62, 71, 80],
-  ]),
+  ], grid.columns),
   [
     [0, 9, 18, 27, 36, 45, 54, 63, 72],
     [1, 10, 19, 28, 37, 46, 55, 64, 73],
@@ -154,7 +154,7 @@ test(
 );
 test(
   'blocks = [...reversedBlocksArray]',
-  ((grid.blocks = [
+  (grid.blocks = [
     [80, 79, 78, 71, 70, 69, 62, 61, 60],
     [77, 76, 75, 68, 67, 66, 59, 58, 57],
     [74, 73, 72, 65, 64, 63, 56, 55, 54],
@@ -164,8 +164,7 @@ test(
     [26, 25, 24, 17, 16, 15, 8, 7, 6],
     [23, 22, 21, 14, 13, 12, 5, 4, 3],
     [20, 19, 18, 11, 10, 9, 2, 1, 0],
-  ]),
-  grid.blocks),
+  ], grid.blocks),
   [
     [80, 79, 78, 71, 70, 69, 62, 61, 60],
     [77, 76, 75, 68, 67, 66, 59, 58, 57],
@@ -178,8 +177,91 @@ test(
     [20, 19, 18, 11, 10, 9, 2, 1, 0],
   ]
 );
-console.log('End of Test');
 console.groupEnd();
+
+console.group(`Testing grid: new Grid({columns: ${columns}, rows ${rows}, blockSize: ${blockSize}, wrapReturnedValuesWithGridData: false})`);
+const gridWithDetails = new Grid({columns, rows, blockSize});
+test('cells[0].index === 0 && cells[0].row === 0 && cells.column === 0 && cells.block === 0', (gridWithDetails.cells[0].index === 0 && gridWithDetails.cells[0].row === 0 && gridWithDetails.cells[0].column === 0 && gridWithDetails.cells[0].block === 0), true)
+test('cells[0].value === 0', gridWithDetails.cells[0].value, 0)
+test('cells[0].value = 54', (gridWithDetails.cells[0].value = 54, gridWithDetails.cells[0].value), 54)
+test(
+  'rows = [...reversedRowsArray]',
+  (gridWithDetails.rows = [
+    [80, 79, 78, 77, 76, 75, 74, 73, 72],
+    [71, 70, 69, 68, 67, 66, 65, 64, 63],
+    [62, 61, 60, 59, 58, 57, 56, 55, 54],
+    [53, 52, 51, 50, 49, 48, 47, 46, 45],
+    [44, 43, 42, 41, 40, 39, 38, 37, 36],
+    [35, 34, 33, 32, 31, 30, 29, 28, 27],
+    [26, 25, 24, 23, 22, 21, 20, 19, 18],
+    [17, 16, 15, 14, 13, 12, 11, 10, 9],
+    [8, 7, 6, 5, 4, 3, 2, 1, 0],
+  ], gridWithDetails.rows.map(segment => segment.map(({value}: {value: any}) => value))),
+  [
+    [80, 79, 78, 77, 76, 75, 74, 73, 72],
+    [71, 70, 69, 68, 67, 66, 65, 64, 63],
+    [62, 61, 60, 59, 58, 57, 56, 55, 54],
+    [53, 52, 51, 50, 49, 48, 47, 46, 45],
+    [44, 43, 42, 41, 40, 39, 38, 37, 36],
+    [35, 34, 33, 32, 31, 30, 29, 28, 27],
+    [26, 25, 24, 23, 22, 21, 20, 19, 18],
+    [17, 16, 15, 14, 13, 12, 11, 10, 9],
+    [8, 7, 6, 5, 4, 3, 2, 1, 0],
+  ]
+);
+test(
+  'columns = [...sequencialNumbersColumnsArray]',
+  (gridWithDetails.columns = [
+    [0, 9, 18, 27, 36, 45, 54, 63, 72],
+    [1, 10, 19, 28, 37, 46, 55, 64, 73],
+    [2, 11, 20, 29, 38, 47, 56, 65, 74],
+    [3, 12, 21, 30, 39, 48, 57, 66, 75],
+    [4, 13, 22, 31, 40, 49, 58, 67, 76],
+    [5, 14, 23, 32, 41, 50, 59, 68, 77],
+    [6, 15, 24, 33, 42, 51, 60, 69, 78],
+    [7, 16, 25, 34, 43, 52, 61, 70, 79],
+    [8, 17, 26, 35, 44, 53, 62, 71, 80],
+  ], gridWithDetails.columns.map(segment => segment.map(({value}: {value: any}) => value))),
+  [
+    [0, 9, 18, 27, 36, 45, 54, 63, 72],
+    [1, 10, 19, 28, 37, 46, 55, 64, 73],
+    [2, 11, 20, 29, 38, 47, 56, 65, 74],
+    [3, 12, 21, 30, 39, 48, 57, 66, 75],
+    [4, 13, 22, 31, 40, 49, 58, 67, 76],
+    [5, 14, 23, 32, 41, 50, 59, 68, 77],
+    [6, 15, 24, 33, 42, 51, 60, 69, 78],
+    [7, 16, 25, 34, 43, 52, 61, 70, 79],
+    [8, 17, 26, 35, 44, 53, 62, 71, 80],
+  ]
+);
+test(
+  'blocks = [...reversedBlocksArray]',
+  (gridWithDetails.blocks = [
+    [80, 79, 78, 71, 70, 69, 62, 61, 60],
+    [77, 76, 75, 68, 67, 66, 59, 58, 57],
+    [74, 73, 72, 65, 64, 63, 56, 55, 54],
+    [53, 52, 51, 44, 43, 42, 35, 34, 33],
+    [50, 49, 48, 41, 40, 39, 32, 31, 30],
+    [47, 46, 45, 38, 37, 36, 29, 28, 27],
+    [26, 25, 24, 17, 16, 15, 8, 7, 6],
+    [23, 22, 21, 14, 13, 12, 5, 4, 3],
+    [20, 19, 18, 11, 10, 9, 2, 1, 0],
+  ], gridWithDetails.blocks.map(segment => segment.map(({value}: {value: any}) => value))),
+  [
+    [80, 79, 78, 71, 70, 69, 62, 61, 60],
+    [77, 76, 75, 68, 67, 66, 59, 58, 57],
+    [74, 73, 72, 65, 64, 63, 56, 55, 54],
+    [53, 52, 51, 44, 43, 42, 35, 34, 33],
+    [50, 49, 48, 41, 40, 39, 32, 31, 30],
+    [47, 46, 45, 38, 37, 36, 29, 28, 27],
+    [26, 25, 24, 17, 16, 15, 8, 7, 6],
+    [23, 22, 21, 14, 13, 12, 5, 4, 3],
+    [20, 19, 18, 11, 10, 9, 2, 1, 0],
+  ]
+)
+console.groupEnd();
+
+console.log('End of Test');
 
 function test(name: string | number, input: any, expectedOutput: any) {
   console.group();
