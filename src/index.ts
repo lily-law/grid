@@ -40,7 +40,7 @@ interface Grid {
   getBlocks: () => any[];
   getDiagonals: () => {forward: any[], backward: any[]};
   getNths: (n: number, starting?: number) => any[];
-  updateCells: (arr: (CellLocation & CellData)[]) => CellData[];
+  updateCells: (arr: (CellLocation & {value: any})[]) => CellData[];
   translate: ({index, row, column}: {index?: number; row?: number; column?: number}) => Position;
   translateIndex: (cellLocation: CellLocation, width?: number) => number;
   translateCoordinate: ({index}: CellLocation) => CellLocation;
@@ -273,7 +273,7 @@ Grid.prototype.getNths = function (n: number, starting = 0) {
     .map((cell: Cell) => cell.data);
 };
 Grid.prototype.updateCells = function updateCells(arr) {
-  arr.forEach(({index, column, row, block, blockIndex, blockRow, blockColumn, data}) => {
+  arr.forEach(({index, column, row, block, blockIndex, blockRow, blockColumn, value}) => {
     let cellIndex;
     if (isActual.number(index)) {
       cellIndex = index;
@@ -289,7 +289,7 @@ Grid.prototype.updateCells = function updateCells(arr) {
     }
     const cell = (isActual.number(cellIndex)) && this.grid[(cellIndex as number)];
     if (cell) {
-      cell.data = data;
+      cell.data = value;
     }
   });
   return this.cells
