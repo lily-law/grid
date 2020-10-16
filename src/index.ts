@@ -31,6 +31,7 @@ interface Lookup {
 interface Grid {
   height: number;
   width: number;
+  includeDetailsOnCellGetter: boolean;
   blockSize: BlockSize;
   lookup: Lookup;
   grid: Cell[];
@@ -51,10 +52,11 @@ interface Grid {
 }
 
 class Grid {
-  constructor({columns, rows, blockSize}: {columns?: number; rows?: number; blockSize: {width: number; height?: number};}) {
+  constructor({columns, rows, blockSize, wrapReturnedValuesWithGridData = true}: {columns?: number; rows?: number; blockSize: {width: number; height?: number}; wrapReturnedValuesWithGridData?: boolean}) {
     this.height = rows || columns || 3;
     this.width = columns || this.height;
     this.blockSize = {width: blockSize.width, height: blockSize.height || blockSize.width};
+    this.includeDetailsOnCellGetter = wrapReturnedValuesWithGridData;
     this.lookup = {
       row: {},
       column: {},
@@ -132,9 +134,12 @@ Grid.prototype.initGrid = function (arr: any[]) {
   };
   this.grid = arr.map(
     (data: any, index: number): Cell => {
+      if (data.hasDetailsFromGridPackage) {
+        data = data.value;
+      }
       const position = this.translate({index});
       this.addToLookup(position);
-      return new Cell({position, data});
+      return new Cell({position, data, includeDetails: this.includeDetailsOnCellGetter});
     }
   );
 };
